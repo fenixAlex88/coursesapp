@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,7 +26,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -35,6 +36,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.alex.coursesapp.ui.theme.CoursesAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -42,12 +48,45 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CoursesAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+               //Transporent System Bars
 
+                //Navigation System
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)){
+                    val navController = rememberNavController()
+
+                    NavHost(navController = navController, startDestination = "home"){
+                        composable("home"){
+                            HomeScreen(onDetailsClick = {
+                                    title -> navController.navigate("details/title=$title")
+                            }, onAboutClick = {
+                                navController.navigate("about")
+                            })
+                        }
+                        composable("about"){
+                            AboutScreen (onNavigateUp = {
+                                navController.popBackStack()
+                            })
+                        }
+                        composable("details/title={title}",
+                            arguments = listOf(
+                                navArgument("title"){
+                                    type = NavType.StringType
+                                    nullable = true
+                                }
+                            )
+                        ){
+                            backStackEntry ->
+                                val arguments = requireNotNull(backStackEntry.arguments)
+                            val title = arguments.getString("title")
+                            if (title != null) {
+                                DetailsScreen(title = title, onNavigateUp = {
+                                    navController.popBackStack()
+                                })
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -108,7 +147,7 @@ private fun HomeAppBar(onAboutClick: () -> Unit) {
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)){
         Text(text = "My Courses", style = MaterialTheme.typography.headlineLarge)
         Spacer(modifier = Modifier.weight(1f))
-        TextButton(onClick = { onAboutClick }) {
+        TextButton(onClick = { onAboutClick() }) {
             Text(text = "About", fontSize = 24.sp)
         }
     }
@@ -148,7 +187,7 @@ fun AppBar(title: String, onNavigateUp: () -> Unit) {
 }
 
 @Composable
-fun DetailsScreen(title: String, name: String, onNavigateUp: () -> Unit){
+fun DetailsScreen(title: String, onNavigateUp: () -> Unit){
     val course = courses.first{it.title == title}
     Scaffold {paddingValues ->
         Column (Modifier.padding(paddingValues)){
